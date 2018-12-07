@@ -2,7 +2,7 @@
 
 namespace Alfheim\CriticalCss\CssGenerators;
 
-use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Process\Process;
 use Alfheim\CriticalCss\Storage\StorageInterface;
 use Alfheim\CriticalCss\HtmlFetchers\HtmlFetcherInterface;
 
@@ -86,34 +86,29 @@ class CriticalGenerator implements CssGeneratorInterface
     {
         $html = $this->htmlFetcher->fetch($uri);
 
-        $builder = new ProcessBuilder;
-
-        $builder->setPrefix($this->criticalBin);
-
-        $builder->setArguments([
+        $args = [
+            $this->criticalBin,
             '--base='.realpath(__DIR__.'/../.tmp'),
             '--width='.$this->width,
             '--height='.$this->height,
             '--minify',
-        ]);
+        ];
 
         if (!is_null($this->timeout)) {
-            $builder->setTimeout($this->timeout);
-
-            $builder->add('--timeout='.$this->timeout);
+            $args[] = '--timeout='.$this->timeout;
         }
 
         foreach ($this->css as $css) {
-            $builder->add('--css='.$css);
+            $args[] = '--css='.$css;
         }
 
         foreach ($this->ignore as $ignore) {
-            $builder->add('--ignore='.$ignore);
+            $args[] = '--ignore='.$ignore;
         }
 
-        $builder->setInput($html);
+        $process = new Process($args);
 
-        $process = $builder->getProcess();
+        $process->setInput($html);
 
         $process->run();
 
